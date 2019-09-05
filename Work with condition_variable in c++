@@ -1,4 +1,5 @@
 // Type your code here, or load an example.
+//for using condition_variable first import line 7, 8, 9
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -22,7 +23,7 @@ namespace mythread{
     };
 }
 template<typename T>
-class Stack{
+class Stack{                                    //create here stack class
     int size=10;
     int index=-1;
     T *arr;
@@ -41,11 +42,11 @@ public:
 };
 void mypush(Stack<int> &s,int &num, mutex &m, condition_variable &cv){
     unique_lock<mutex>lck(m);
-    while(ready == false){
+    while(ready == false){                                      //while ready == false 
         for(int i=0;i<num;i++){
-            s.push(i+1);
+            s.push(i+1);                                        
         }
-        cv.notify_one();
+        cv.notify_one();                                        //when for loop complete work condition variable notify cv.wait 
         ready = true;
     }
    
@@ -53,7 +54,7 @@ void mypush(Stack<int> &s,int &num, mutex &m, condition_variable &cv){
 template<typename T>
 T mypop(Stack<T>&s,int num, mutex &m, condition_variable &cv){
     unique_lock<mutex>lck(m);
-    cv.wait(lck, []{return ready;});
+    cv.wait(lck, []{return ready;});                            //only after cv.notify_one is active then this code start to work
     for(int i=0;i<num;i++){
         cout<<s.pop()<<endl;
     }
