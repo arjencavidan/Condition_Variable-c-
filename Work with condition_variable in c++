@@ -1,0 +1,71 @@
+// Type your code here, or load an example.
+#include <iostream>
+#include <string>
+#include <cstring>
+#include <memory>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <future>
+using namespace std;
+bool ready = false;
+namespace mythread{
+    class RAII{
+        thread &th;
+    public:
+        RAII(thread &th):th(th){}
+        ~RAII(){
+            if(th.joinable()){
+                th.join();
+            }
+        }
+    };
+}
+template<typename T>
+class Stack{
+    int size=10;
+    int index=-1;
+    T *arr;
+public:
+    Stack(int size){
+        this->size = size;
+        arr = new T[size];
+    }
+    void push(T num){
+        index++;
+        arr[index] = num;
+    }
+    T pop(){
+        return arr[index--];
+    }
+};
+void mypush(Stack<int> &s,int &num, mutex &m, condition_variable &cv){
+    unique_lock<mutex>lck(m);
+    while(ready == false){
+        for(int i=0;i<num;i++){
+            s.push(i+1);
+        }
+        cv.notify_one();
+        ready = true;
+    }
+   
+}
+template<typename T>
+T mypop(Stack<T>&s,int num, mutex &m, condition_variable &cv){
+    unique_lock<mutex>lck(m);
+    cv.wait(lck, []{return ready;});
+    for(int i=0;i<num;i++){
+        cout<<s.pop()<<endl;
+    }
+    return s.pop();
+}
+int main(){
+    using namespace mythread;mutex m; condition_variable cv;
+    Stack<int> stack(100);
+    int a=99;
+    thread th1(mypush, std::ref(stack), std::ref(a), ref(m), std::ref(cv));
+    thread th2(mypop<int>, std::ref(stack), a, ref(m), std::ref(cv));
+    RAII some(th1);
+    RAII somes(th2);
+    return 0;
+}
